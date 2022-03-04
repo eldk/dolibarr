@@ -172,6 +172,20 @@ UploadFormat::$allowedMimeTypes = array('image/jpeg', 'image/png', 'text/plain',
 // Restrict API to some IPs
 if (!empty($conf->global->API_RESTRICT_ON_IP)) {
 	$allowedip = explode(' ', $conf->global->API_RESTRICT_ON_IP);
+	
+	// allow the use of FQDN for dynamic dns access
+	for ($i = 0; $i < count($allowedip); $i++)
+        // if submitted host is not an IP but some FQDN
+        if (!preg_match('/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/', $allowedip[$i])
+            && preg_match('/^[a-zA-Z0-9-]*\.[a-zA-Z0-9-]*\.[a-zA-Z0-9-]*\.$/', $allowedip[$i])) {
+            // set the IP of the host
+            $allowedip[$i] = gethostbyname($allowedip[$i]);
+            //  if submitted host is not an IP removes it
+        } else if (!preg_match('/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/', $allowedip[$i])) {
+            unset($allowedip[$i]);
+        }
+    }
+	
 	$ipremote = getUserRemoteIP();
 	if (!in_array($ipremote, $allowedip)) {
 		dol_syslog('Remote ip is '.$ipremote.', not into list '.$conf->global->API_RESTRICT_ON_IP);
